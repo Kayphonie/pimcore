@@ -54,6 +54,7 @@ DROP TABLE IF EXISTS `classes` ;
 CREATE TABLE `classes` (
 	`id` VARCHAR(50) NOT NULL,
 	`name` VARCHAR(190) NOT NULL DEFAULT '',
+    `definitionModificationDate` INT(11) UNSIGNED NULL DEFAULT NULL,
 	PRIMARY KEY (`id`),
 	UNIQUE INDEX `name` (`name`)
 ) DEFAULT CHARSET=utf8mb4;
@@ -459,7 +460,8 @@ CREATE TABLE `users` (
   `firstname` varchar(255) DEFAULT NULL,
   `lastname` varchar(255) DEFAULT NULL,
   `email` varchar(255) DEFAULT NULL,
-  `language` varchar(10) DEFAULT NULL,
+  `language` varchar(10) DEFAULT 'en',
+  `datetimeLocale` varchar(10) DEFAULT '',
   `contentLanguages` LONGTEXT NULL,
   `admin` tinyint(1) unsigned DEFAULT '0',
   `active` tinyint(1) unsigned DEFAULT '1',
@@ -801,10 +803,11 @@ CREATE TABLE `notifications` (
   `modificationDate` TIMESTAMP NULL,
   `linkedElementType` ENUM('document', 'asset', 'object') NULL,
   `linkedElement` INT(11) NULL,
+  `payload` LONGTEXT NULL,
+  `isStudio` TINYINT(1) DEFAULT 0 NOT NULL, -- TODO: Remove with end of Classic-UI
   INDEX `recipient` (`recipient`)
-)
-DEFAULT CHARSET=utf8mb4;
-;
+) DEFAULT CHARSET=utf8mb4;
+
 
 DROP TABLE IF EXISTS `object_url_slugs`;
 CREATE TABLE `object_url_slugs` (

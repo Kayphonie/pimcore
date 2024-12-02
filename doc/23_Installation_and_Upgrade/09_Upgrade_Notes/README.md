@@ -1,5 +1,57 @@
 # Upgrade Notes
 
+## Pimcore 11.4.0
+### General
+#### [Logging]
+- Changed log file names. In the `dev` environment, the file names are now `dev-debug.log` and `dev-error.log`. In the `prod` environment, only `prod-error.log` is written.
+#### [Twig Deferred Extension]
+- Removed `rybakit/twig-deferred-extension` dependency and `Twig\DeferredExtension\DeferredExtension` service.
+  If you use deferred twig blocks, please add the dependency to your own `composer.json` and the service to your own `service.yaml`.
+#### [Twig Extension Deprecations]
+- `pimcore_cache` Twig extension is deprecated. Use `pimcorecache` twig tag instead.
+- `pimcore_placeholder`, `pimcore_head_script`, `pimcore_head_style` 
+  - `captureStart()` and `captureEnd()` methods are deprecated. Use native twig `set` tag instead. Take a look at the related docs of each twig extension for an example.
+
+#### [Notification]
+- Extending notifications for studio adding flag `isStudio` column and a `payload` column with according getters and setters.
+  Make sure to run the migration `bin/console doctrine:migrations:execute Pimcore\\Bundle\\CoreBundle\\Migrations\\Version20240813085200`.
+
+## Pimcore 11.3.0
+### General
+#### [System Settings]
+- Unused setting `general.language` has been deprecated.
+#### [Listing]
+- The methods `setOrder()` and `setOrderKey()` throw an `InvalidArgumentException` if the parameters are invalid now.
+#### [Html to Image]
+- [Gotenberg] Bumped the lowest requirement of `gotenberg-php` from `^2.0` to `^2.4` to add support of passing screenshot size
+#### [Assets]
+- MIME type of uploaded assets get determined by `symfony/mime`, before in some cases Flysystem got used which resulted in different MIME types for some rarely used file extensions (e.g. STEP).
+#### [Grid]: 
+- Moved grid data related function to `admin-classic-ui-bundle` `v1.5`.
+- Method `Service::getHelperDefinitions()` is deprecated here and moved to `admin-classic-ui-bundle`.
+#### [Simple Backend Search]
+- Due to grid data refactoring, please note that in order to run this optional bundle correctly, it is required to install `admin-classic-ui-bundle` `v1.5`
+#### [DBAL]
+- Bumped minimum requirement of `doctrine/dbal` to `^3.8` and replaced deprecated/unused methods to get closer to support `v4`.
+#### [Composer]
+- Removed requirement of "phpoffice/phpspreadsheet" due it being not in used, more specifically moved it to the specific bundle who actually use it. Please check and adapt your project's composer requirement accordingly.
+#### [Dependency]
+- Dependencies are now resolved by messenger queue and can be turned off. By default, it is done synchronously, but it's possible to make it async by add the following config:
+```yaml
+framework:
+    messenger:
+        transports:
+            pimcore_dependencies: "doctrine://default?queue_name=pimcore_dependencies"
+        routing:
+            'Pimcore\Messenger\ElementDependenciesMessage': pimcore_dependencies
+```
+and disable it by: 
+```yaml
+pimcore:
+  dependency:
+    enabled: false
+```
+
 ## Pimcore 11.2.4 / 11.2.3.1 / 11.1.6.5
 ### Assets Thumbnails
 - Thumbnail generation for Assets, Documents and Videos now only support the following formats out of the box: `'avif', 'eps', 'gif', 'jpeg', 'jpg', 'pjpeg', 'png', 'svg', 'tiff', 'webm', 'webp'`.
@@ -41,6 +93,7 @@
 - Methods `getAsIntegerCast()` and `getAsFloatCast()` of the `Pimcore\Model\DataObject\Data` class are deprecated now.
 - All algorithms other than`password_hash` used in Password Data Type are now deprecated, please use `password_hash` instead.
 - `MultiSelectOptionsProviderInterface` is deprecated, please use `SelectOptionsProviderInterface` instead.
+
 -----------------
 ### General
 #### [Localization]
@@ -222,8 +275,8 @@ The tokens for password reset are now stored in the DB and are one time use only
 - Removed BruteforceProtection, use Symfony defaults now
 - Removed PreAuthenticatedAdminToken
 - Admin Login Events
-  - Removed `AdminEvents::LOGIN_CREDENTIALS` event.
-  - Removed `AdminEvents::LOGIN_FAILED` event. Use `Symfony\Component\HttpFoundation\Request\LoginFailureEvent` instead.
+  - Removed `AdminEvents::LOGIN_CREDENTIALS` (`pimcore.admin.login.credentials`) event. Use `Pimcore\Bundle\AdminBundle\Event\Login\LoginCredentialsEvent` instead.
+  - Removed `AdminEvents::LOGIN_FAILED` (`pimcore.admin.login.failed`) event. Use `Symfony\Component\HttpFoundation\Request\LoginFailureEvent` instead.
 - Removed Pimcore Password Encoder factory, `pimcore_admin.security.password_encoder_factory` service and `pimcore.security.factory_type` config.
 - Removed deprecated method `Pimcore\Bundle\AdminBundle\Security\User::getUsername()`, use `getIdentifier()` instead.
 -  Deprecated method `Pimcore\Tool\Authentication::authenticateHttpBasic()` has been removed.

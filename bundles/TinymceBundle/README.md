@@ -82,11 +82,31 @@ configuration in a file in the `Resources/public` directory  of your bundle (e.g
 pimcore.document.editables.wysiwyg = pimcore.document.editables.wysiwyg || {};
 pimcore.document.editables.wysiwyg.defaultEditorConfig = { menubar: true };
 ```
+This will show you the default menubar from TinyMCE in all document editables.
 
-This will show you the default menubar from TinyMCE in all editables.
+For the data object settings, you should put them in the `startup.js` in your bundle.
+```
+pimcore.registerNS("pimcore.plugin.YourTinymceEditorConfigBundle");
 
-To load that file in editmode, you need to implement `getEditmodeJsPaths` in your bundle class. Given your bundle is named
-`AppAdminBundle` and your `editmode.js` created before was saved to `src/AppAdminBundle/public/js/editmode.js`:
+pimcore.plugin.YourTinymceEditorConfigBundle = Class.create({
+
+    initialize: function () {
+        document.addEventListener(pimcore.events.pimcoreReady, this.pimcoreReady.bind(this));
+    },
+
+    pimcoreReady: function (e) {
+        pimcore.object.tags.wysiwyg = pimcore.object.tags.wysiwyg || {};
+        pimcore.object.tags.wysiwyg.defaultEditorConfig = { menubar: true };
+    }
+});
+
+const YourTinymceEditorConfigBundlePlugin = new pimcore.plugin.YourTinymceEditorConfigBundle();    
+```
+
+
+
+To load the `editmode.js` file in editmode, you need to implement `getEditmodeJsPaths` in your bundle class. Given your bundle is named
+`AppAdminBundle` and your `editmode.js` and `startup.js` created before was saved to `src/AppAdminBundle/public/js/editmode.js` and `src/AppAdminBundle/public/js/startup.js`:
 
 ```php
 <?php
@@ -97,10 +117,17 @@ use Pimcore\Extension\Bundle\AbstractPimcoreBundle;
 
 class AppAdminBundle extends AbstractPimcoreBundle
 {
-    public function getEditmodeJsPaths()
+    public function getEditmodeJsPaths(): array
     {
         return [
             '/bundles/appadmin/js/pimcore/editmode.js'
+        ];
+    }
+    
+    public function getJsPaths()
+    {
+        return [
+            '/bundles/appadmin/js/pimcore/startup.js'
         ];
     }
 }
@@ -133,11 +160,33 @@ class EditmodeListener implements EventSubscriberInterface
         ];
     }
 
-    public function onEditmodeJsPaths(PathsEvent $event)
+    public function onEditmodeJsPaths(PathsEvent $event): void
     {
-        $event->setPaths(array_merge($event->getPaths(), [
+        $event->addPaths([
             '/bundles/app/js/pimcore/editmode.js'
-        ]));
+        ]);
     }
+}
+```
+
+### Loading additional TinyMCE plugins that are not shipped with this bundle
+
+You can load additional plugins that are not shipped by default with Pimcore's TinyMCE bundle.
+
+The following example adds the plugin `charmap` (Note: Included since Pimcore 11.4):
+
+1) [Download](https://www.tiny.cloud/get-tiny/) a TinyMCE dist package matching the version the bundle is currently shipped with.
+2) Extract the desired plugin from the TinyMCE dist package and place it in your app's or bundle's resource folder, 
+   e.g. copy `js/tinymce/plugins/charmap/plugin.min.js` to `public/static/js/tinymce_plugins/charmap/plugin.min.js`.
+3) Use TinyMCE's config option [`external_plugins`](https://www.tiny.cloud/docs/tinymce/latest/editor-important-options/#external_plugins)
+   to load the plugin:
+```javascript
+{
+    // ...
+    external_plugins: {
+        charmap: '/static/js/tinymce_plugins/charmap/plugin.min.js',
+    },
+    // ...
+    charmap: [/* ... */],  // plugin's configuration
 }
 ```
